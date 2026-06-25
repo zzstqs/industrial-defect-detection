@@ -1,6 +1,5 @@
 # 工业视觉检测系统
-
-> 🎓 人工智能本科毕业设计 / 求职项目  
+ 
 > 基于 **YOLOv11 + OpenCV** 的实时工业缺陷检测与尺寸测量系统
 
 ![Python](https://img.shields.io/badge/Python-3.13-blue) ![FastAPI](https://img.shields.io/badge/FastAPI-0.115-green) ![YOLO](https://img.shields.io/badge/YOLO-v11-orange) ![OpenCV](https://img.shields.io/badge/OpenCV-4.x-red)
