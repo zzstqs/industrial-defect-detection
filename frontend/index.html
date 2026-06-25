@@ -1,0 +1,2004 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>工业视觉检测系统</title>
+<style>
+/* ============ DESIGN TOKENS ============ */
+:root {
+  /* Industrial warm-gray palette — light theme */
+  --bg-root:        oklch(95% 0.004 80);
+  --bg-surface:     oklch(98% 0.003 80);
+  --bg-elevated:    oklch(100% 0 0);
+  --bg-overlay:     oklch(90% 0.005 80);
+  --border-subtle:  oklch(88% 0.004 80);
+  --border-default: oklch(76% 0.004 80);
+
+  /* Text */
+  --text-primary:   oklch(18% 0.004 100);
+  --text-secondary: oklch(38% 0.004 100);
+  --text-muted:     oklch(52% 0.004 100);
+  --text-disabled:  oklch(72% 0.004 100);
+
+  /* Signal green accent — keeps industrial character */
+  --accent:         oklch(48% 0.15 160);
+  --accent-hover:   oklch(42% 0.15 160);
+  --accent-muted:   oklch(60% 0.05 160);
+  --accent-surface: oklch(93% 0.02 160);
+
+  /* Semantic */
+  --success:        oklch(46% 0.13 142);
+  --warning:        oklch(55% 0.13 80);
+  --danger:         oklch(46% 0.16 25);
+  --info:           oklch(48% 0.1 230);
+
+  /* Spacing scale — 4px base */
+  --space-1:  0.25rem;
+  --space-2:  0.5rem;
+  --space-3:  0.75rem;
+  --space-4:  1rem;
+  --space-5:  1.25rem;
+  --space-6:  1.5rem;
+  --space-8:  2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  /* Typography */
+  --font-body:    'Segoe UI', 'Noto Sans SC', system-ui, -apple-system, sans-serif;
+  --font-display: 'Segoe UI', 'Noto Sans SC', system-ui, sans-serif;
+  --font-mono:    'Cascadia Code', 'Consolas', 'Menlo', monospace;
+  --text-xs:   0.75rem;
+  --text-sm:   0.875rem;
+  --text-base: 1rem;
+  --text-lg:   1.125rem;
+  --text-xl:   1.375rem;
+  --text-2xl:  1.5rem;
+  --text-3xl:  1.875rem;
+  --leading-tight:  1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.625;
+
+  /* Motion tokens */
+  --duration-fast:    120ms;
+  --duration-normal:  200ms;
+  --duration-slow:    350ms;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* Radii */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  /* Layout */
+  --content-max: 1440px;
+  --sidebar-width: 340px;
+}
+
+/* ============ RESET & BASE ============ */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  color: var(--text-primary);
+  background: var(--bg-root);
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+img, video, canvas { display:block; max-width:100%; height:auto; }
+button { font:inherit; color:inherit; cursor:pointer; }
+a { color: var(--accent); text-decoration:none; }
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+:focus:not(:focus-visible) { outline:none; }
+
+/* ============ LAYOUT ============ */
+.app-header {
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: var(--space-4) var(--space-6);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+@supports not (backdrop-filter: blur(12px)) {
+  .app-header { background: var(--bg-elevated); }
+}
+
+.header-inner {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.header-logo {
+  width: 36px; height: 36px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-surface);
+  border: 1.5px solid var(--accent-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.header-logo svg { width: 20px; height: 20px; color: var(--accent); }
+
+.header-title {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  color: var(--text-primary);
+}
+.header-subtitle {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-top: 1px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* ============ CONNECTION INDICATOR ============ */
+.conn-badge {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  border-radius: 20px;
+  font-size: var(--text-xs);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  background: var(--bg-overlay);
+  border: 1px solid var(--border-subtle);
+}
+.conn-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--danger);
+  transition: background var(--duration-normal) var(--ease-out-expo);
+}
+.conn-dot.online {
+  background: var(--success);
+  box-shadow: 0 0 6px var(--success);
+}
+.conn-dot.connecting {
+  background: var(--warning);
+  animation: conn-pulse 1.2s var(--ease-in-out) infinite;
+}
+@keyframes conn-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+/* ============ MAIN GRID ============ */
+.app-main {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: var(--space-6);
+  display: grid;
+  grid-template-columns: 1fr var(--sidebar-width);
+  gap: var(--space-6);
+  align-items: start;
+}
+
+/* ============ VIDEO PANEL ============ */
+.video-panel {
+  min-width: 0;
+}
+
+.video-container {
+  position: relative;
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-subtle);
+  overflow: hidden;
+  aspect-ratio: 4/3;
+}
+
+#videoFrame {
+  width: 100%;
+  height: 100%;
+  display: none;
+  object-fit: contain;
+  background: var(--bg-surface);
+}
+
+/* Placeholder states */
+.video-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  transition: opacity var(--duration-normal) var(--ease-out-expo);
+}
+.video-placeholder.hidden { opacity: 0; pointer-events: none; }
+
+/* Skeleton shimmer */
+.skeleton-ring {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  border: 3px solid var(--border-subtle);
+  border-top-color: var(--accent-muted);
+  animation: skeleton-spin 0.9s linear infinite;
+}
+@keyframes skeleton-spin { to { transform: rotate(360deg); } }
+
+/* FPS overlay */
+.fps-overlay {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  background: oklch(0% 0 0 / 0.08);
+  backdrop-filter: blur(4px);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--accent);
+  border: 0.5px solid oklch(0% 0 0 / 0.12);
+  pointer-events: none;
+  transition: opacity var(--duration-fast);
+}
+.fps-overlay.idle { opacity: 0.4; }
+
+/* ============ TOOLBAR ============ */
+.toolbar {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+  flex-wrap: wrap;
+}
+
+/* ============ BUTTONS ============ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 550;
+  letter-spacing: 0.01em;
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  transition:
+    background var(--duration-fast) var(--ease-out-expo),
+    border-color var(--duration-fast) var(--ease-out-expo),
+    color var(--duration-fast) var(--ease-out-expo),
+    transform var(--duration-fast) var(--ease-out-expo);
+  user-select: none;
+  -webkit-user-select: none;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Hover */
+@media (hover: hover) {
+  .btn:hover {
+    background: var(--bg-elevated);
+    border-color: var(--border-default);
+    color: var(--text-primary);
+  }
+}
+
+/* Active (pressed) */
+.btn:active { transform: scale(0.975); }
+
+/* Focus */
+.btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Primary (active/toggle on) */
+.btn-primary {
+  background: var(--accent-surface);
+  border-color: var(--accent-muted);
+  color: var(--accent);
+}
+@media (hover: hover) {
+  .btn-primary:hover {
+    background: oklch(90% 0.04 160);
+    border-color: var(--accent);
+  }
+}
+
+/* Toggle ON state */
+.btn-toggle-on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: oklch(95% 0 0);
+  font-weight: 600;
+  box-shadow: 0 0 0 1px var(--accent), 0 0 12px oklch(48% 0.15 160 / 0.15);
+}
+@media (hover: hover) {
+  .btn-toggle-on:hover {
+    background: var(--accent-hover);
+    border-color: var(--accent-hover);
+    color: oklch(95% 0 0);
+    box-shadow: 0 0 0 1px var(--accent-hover), 0 0 16px oklch(48% 0.15 160 / 0.2);
+  }
+}
+
+/* Measure variant */
+.btn-measure {
+  background: oklch(94% 0.02 25);
+  border-color: oklch(82% 0.04 25);
+  color: oklch(42% 0.12 25);
+}
+@media (hover: hover) {
+  .btn-measure:hover {
+    background: oklch(89% 0.03 25);
+    border-color: oklch(70% 0.06 25);
+  }
+}
+.btn-measure-on {
+  background: var(--warning);
+  border-color: var(--warning);
+  color: oklch(95% 0 0);
+  font-weight: 600;
+  box-shadow: 0 0 0 1px var(--warning), 0 0 12px oklch(55% 0.13 80 / 0.15);
+}
+
+/* Secondary button */
+.btn-secondary {
+  background: transparent;
+  border-color: var(--border-subtle);
+  color: var(--text-muted);
+  font-weight: 500;
+}
+@media (hover: hover) {
+  .btn-secondary:hover {
+    border-color: var(--border-default);
+    color: var(--text-secondary);
+  }
+}
+
+/* Icon inside button */
+.btn-icon {
+  width: 16px; height: 16px;
+  flex-shrink: 0;
+}
+
+/* Disabled */
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Loading state */
+.btn-loading {
+  position: relative;
+  color: transparent !important;
+}
+.btn-loading::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 16px; height: 16px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: skeleton-spin 0.6s linear infinite;
+  color: var(--text-primary);
+}
+
+/* ============ SIDEBAR ============ */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* ============ STATUS BAR ============ */
+.status-bar {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
+  padding: var(--space-4);
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-subtle);
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  line-height: 1.3;
+}
+
+.status-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--border-subtle);
+  flex-shrink: 0;
+  transition: background var(--duration-normal) var(--ease-out-expo),
+              box-shadow var(--duration-normal) var(--ease-out-expo);
+}
+.status-dot.active {
+  background: var(--success);
+  box-shadow: 0 0 6px var(--success);
+}
+.status-dot.warning {
+  background: var(--warning);
+  box-shadow: 0 0 6px var(--warning);
+}
+
+.status-value {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--accent);
+  margin-left: auto;
+}
+
+/* ============ CARD (section panel) ============ */
+.card {
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-subtle);
+  overflow: hidden;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.card-title {
+  font-size: var(--text-sm);
+  font-weight: 650;
+  color: var(--text-secondary);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.card-badge {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--accent);
+  background: var(--accent-surface);
+  padding: 1px 8px;
+  border-radius: 10px;
+  border: 0.5px solid var(--accent-muted);
+}
+
+.card-body {
+  padding: var(--space-4);
+  min-height: 80px;
+}
+
+.card-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-8) var(--space-4);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  text-align: center;
+  line-height: var(--leading-relaxed);
+}
+.card-empty-icon {
+  width: 32px; height: 32px;
+  opacity: 0.35;
+  margin-bottom: var(--space-2);
+}
+
+/* ============ DETECTION LIST ============ */
+.detection-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.detection-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: var(--bg-root);
+  border-radius: var(--radius-md);
+  border-left: 3px solid var(--accent);
+  transition:
+    border-color var(--duration-slow) var(--ease-out-expo),
+    opacity var(--duration-slow) var(--ease-out-expo),
+    transform var(--duration-slow) var(--ease-out-expo);
+  animation: item-enter 400ms var(--ease-out-quart) both;
+  will-change: transform, opacity;
+}
+/* 新出现的项用更舒缓的动画 */
+@keyframes item-enter {
+  from { opacity: 0; transform: translateX(-4px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+/* 即将移除的项：淡出 */
+.detection-item.removing {
+  opacity: 0;
+  transform: translateX(8px);
+  pointer-events: none;
+}
+
+.detection-item.measure { border-left-color: var(--warning); }
+
+.detection-id {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-surface);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.detection-item.measure .detection-id {
+  color: var(--warning);
+  background: oklch(94% 0.02 25);
+}
+
+.detection-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.detection-class {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+.detection-detail {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  line-height: var(--leading-relaxed);
+}
+.detection-confidence {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+.conf-high { background: oklch(93% 0.03 142); color: var(--success); }
+.conf-mid  { background: oklch(93% 0.03 80);  color: var(--warning); }
+.conf-low  { background: oklch(93% 0.03 25);  color: var(--danger); }
+
+/* ============ PARAMETER PANEL ============ */
+.param-panel {
+  display: none;
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-subtle);
+}
+.param-panel.visible { display: block; }
+
+.param-group {
+  border-bottom: 1px solid var(--border-subtle);
+}
+.param-group:last-child { border-bottom: none; }
+
+.param-group-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  background: none;
+  border: none;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: color var(--duration-fast);
+  text-align: left;
+}
+.param-group-header:hover { color: var(--accent); }
+.param-group-header:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+.param-arrow {
+  width: 12px; height: 12px;
+  transition: transform var(--duration-fast) var(--ease-out-expo);
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+.param-group.open .param-arrow { transform: rotate(90deg); }
+
+.param-body {
+  display: none;
+  padding: 0 var(--space-4) var(--space-4);
+}
+.param-group.open .param-body { display: block; }
+
+.param-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+.param-row:last-child { margin-bottom: 0; }
+
+.param-row label {
+  width: 64px;
+  flex-shrink: 0;
+  text-align: right;
+  color: var(--text-muted);
+}
+
+.param-row input[type="range"] {
+  flex: 1;
+  height: 4px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--bg-overlay);
+  border-radius: 2px;
+  cursor: pointer;
+}
+.param-row input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--bg-surface);
+  cursor: pointer;
+  transition: transform var(--duration-fast);
+}
+.param-row input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.15); }
+.param-row input[type="range"]:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px oklch(48% 0.15 160 / 0.2);
+}
+
+.param-val {
+  width: 38px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--accent);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.param-row input[type="checkbox"] {
+  width: 16px; height: 16px;
+  accent-color: var(--accent);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.param-row select {
+  background: var(--bg-root);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 3px 6px;
+  font-size: var(--text-xs);
+  cursor: pointer;
+  flex: 1;
+}
+.param-row select:focus-visible {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.param-footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-xs);
+}
+
+.btn-reset {
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--text-xs);
+  background: var(--bg-overlay);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--duration-fast);
+}
+.btn-reset:hover { background: var(--border-subtle); color: var(--text-primary); }
+
+.channel-summary {
+  margin-left: auto;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ============ HELP CARD ============ */
+.help-list {
+  list-style: none;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  line-height: var(--leading-relaxed);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.help-list li {
+  padding-left: var(--space-4);
+  position: relative;
+}
+.help-list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--accent-muted);
+}
+
+/* ============ RESPONSIVE ============ */
+
+/* Tablet / small desktop */
+@media (max-width: 1024px) {
+  .app-main {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+    padding: var(--space-4);
+  }
+
+  .sidebar {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-3);
+  }
+
+  .status-bar {
+    grid-template-columns: repeat(3, 1fr);
+    grid-column: 1 / -1;
+  }
+
+  .card { grid-column: span 1; }
+  .card-wide { grid-column: 1 / -1; }
+
+  :root { --sidebar-width: 100%; }
+}
+
+/* Phone */
+@media (max-width: 640px) {
+  :root {
+    --space-6: 1rem;
+    --space-4: 0.75rem;
+  }
+
+  .app-header { padding: var(--space-3) var(--space-4); }
+  .header-title { font-size: var(--text-lg); }
+  .header-subtitle { display: none; }
+
+  .app-main {
+    padding: var(--space-3);
+    gap: var(--space-3);
+  }
+
+  .video-container {
+    aspect-ratio: 1/1;
+    border-radius: var(--radius-md);
+  }
+
+  .toolbar {
+    gap: var(--space-2);
+  }
+  .btn {
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--text-xs);
+    border-radius: var(--radius-sm);
+  }
+
+  .sidebar {
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+  }
+
+  .status-bar {
+    grid-template-columns: 1fr;
+    gap: var(--space-2);
+  }
+  .status-item {
+    justify-content: space-between;
+  }
+
+  .fps-overlay {
+    top: var(--space-2);
+    right: var(--space-2);
+    font-size: 0.65rem;
+    padding: 1px 6px;
+  }
+}
+
+/* Touch optimization */
+@media (pointer: coarse) {
+  .btn {
+    min-height: 44px;
+    min-width: 44px;
+    padding: var(--space-3) var(--space-5);
+  }
+  .param-group-header {
+    min-height: 44px;
+  }
+  .param-row input[type="range"] {
+    height: 6px;
+  }
+  .param-row input[type="range"]::-webkit-slider-thumb {
+    width: 22px; height: 22px;
+  }
+}
+
+/* ============ MOTION: reduced-motion ============ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .skeleton-ring { animation: none; }
+}
+
+/* ============ ANIMATIONS: standard ============ */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ============ LOADING SKELETON in list ============ */
+.skeleton-line {
+  height: 12px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(
+    90deg,
+    var(--bg-overlay) 25%,
+    var(--border-subtle) 50%,
+    var(--bg-overlay) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.skeleton-line-short { width: 60%; }
+.skeleton-line-mid { width: 80%; }
+
+/* ============ TOAST ============ */
+.toast-container {
+  position: fixed;
+  bottom: var(--space-6);
+  right: var(--space-6);
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  pointer-events: none;
+}
+
+.toast {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-5);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  box-shadow: 0 4px 16px oklch(0% 0 0 / 0.1);
+  pointer-events: auto;
+  animation: toast-in 300ms var(--ease-out-expo) both,
+             toast-out 300ms var(--ease-in-out) 3s forwards;
+  max-width: 320px;
+}
+.toast-error { border-color: var(--danger); }
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes toast-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============ HEADER ============ -->
+<header class="app-header" role="banner">
+  <div class="header-inner">
+    <div class="header-brand">
+      <div class="header-logo" aria-hidden="true">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+          <circle cx="10" cy="10" r="4.5"/>
+          <path d="M10 2v2.5M10 15.5V18M2 10h2.5M15.5 10H18"/>
+          <circle cx="10" cy="10" r="8" stroke-dasharray="2 3" opacity="0.4"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="header-title">工业视觉检测系统</h1>
+        <p class="header-subtitle">Industrial Vision Inspection</p>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <div class="conn-badge" id="connBadge" aria-live="polite">
+        <span class="conn-dot connecting" id="connDot"></span>
+        <span id="connLabel">连接中</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ============ MAIN CONTENT ============ -->
+<main class="app-main" id="mainContent">
+  <!-- Video Panel -->
+  <section class="video-panel" aria-label="实时视频监控">
+    <div class="video-container">
+      <div class="fps-overlay idle" id="fpsOverlay" aria-live="off">-- FPS</div>
+
+      <div class="video-placeholder" id="videoPlaceholder">
+        <div class="skeleton-ring"></div>
+        <span id="placeholderText">正在连接摄像头...</span>
+      </div>
+
+      <img id="videoFrame" alt="工业摄像头实时画面" />
+    </div>
+
+    <div class="toolbar" role="toolbar" aria-label="检测控制">
+      <button class="btn" id="btnDetect" aria-pressed="false">
+        <svg class="btn-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+          <path d="M5 5l-3-3M14 14l-3-3"/>
+          <circle cx="6.5" cy="6.5" r="4.5"/>
+        </svg>
+        <span>缺陷检测：关</span>
+      </button>
+
+      <button class="btn btn-measure" id="btnMeasure" aria-pressed="false">
+        <svg class="btn-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+          <path d="M2 14L14 2"/>
+          <path d="M3 1l2 2M13 9l2 2M1 3l2-2M9 13l2-2"/>
+        </svg>
+        <span>尺寸测量：关</span>
+      </button>
+
+      <button class="btn btn-secondary" id="btnMethod">
+        <svg class="btn-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+          <path d="M3 4h10M3 8h8M3 12h6"/>
+        </svg>
+        <span>方法：<span id="methodLabel">YOLO</span></span>
+      </button>
+    </div>
+  </section>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" aria-label="检测信息面板">
+    <!-- Status Bar -->
+    <div class="status-bar card-wide" role="status" aria-label="系统状态">
+      <div class="status-item">
+        <span class="status-dot" id="dotDetect"></span>
+        <span>缺陷检测</span>
+        <span class="status-value" id="txtDetect">待机</span>
+      </div>
+      <div class="status-item">
+        <span class="status-dot" id="dotMeasure"></span>
+        <span>尺寸测量</span>
+        <span class="status-value" id="txtMeasure">待机</span>
+      </div>
+      <div class="status-item">
+        <span>延迟</span>
+        <span class="status-value" id="txtLatency">--ms</span>
+      </div>
+    </div>
+
+    <!-- Detection Results -->
+    <div class="card" id="cardDetection" aria-labelledby="cardDetectTitle">
+      <div class="card-header">
+        <span class="card-title" id="cardDetectTitle">缺陷检测</span>
+        <span class="card-badge" id="detectCount" aria-live="polite">0</span>
+      </div>
+      <div class="card-body" id="detectionBody">
+        <div class="card-empty">
+          <svg class="card-empty-icon" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M10 10l-6-6M28 28l-6-6"/>
+            <circle cx="13" cy="13" r="9"/>
+          </svg>
+          <span id="detectionEmpty">未开启缺陷检测</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Measurement Results -->
+    <div class="card" id="cardMeasurement" aria-labelledby="cardMeasureTitle">
+      <div class="card-header">
+        <span class="card-title" id="cardMeasureTitle">尺寸测量</span>
+        <span class="card-badge" id="measureCount" aria-live="polite">0</span>
+      </div>
+      <div class="card-body" id="measurementBody">
+        <div class="card-empty">
+          <svg class="card-empty-icon" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M3 29L29 3"/>
+            <path d="M6 2l4 4M26 18l4 4M2 6l4-4M18 26l4-4"/>
+          </svg>
+          <span id="measureEmpty">未开启尺寸测量</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Parameter Panel -->
+    <div class="param-panel card-wide" id="paramPanel" aria-label="传统CV参数调节">
+      <div class="card-header">
+        <span class="card-title">CV参数调节</span>
+        <span class="card-badge">传统CV</span>
+      </div>
+
+      <div class="param-group" id="groupEdge">
+        <button class="param-group-header" aria-expanded="false" aria-controls="groupEdgeBody">
+          <svg class="param-arrow" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
+            <path d="M4 1.5L8.5 6L4 10.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          </svg>
+          Canny 边缘检测
+        </button>
+        <div class="param-body" id="groupEdgeBody" role="region" aria-label="Canny边缘检测参数">
+          <div class="param-row">
+            <input type="checkbox" id="enable_canny" checked>
+            <label for="enable_canny" style="width:auto;text-align:left">启用</label>
+          </div>
+          <div class="param-row">
+            <label for="canny_low">低阈值</label>
+            <input type="range" id="canny_low" min="10" max="200" value="50">
+            <span class="param-val" id="canny_low_val">50</span>
+          </div>
+          <div class="param-row">
+            <label for="canny_high">高阈值</label>
+            <input type="range" id="canny_high" min="30" max="300" value="150">
+            <span class="param-val" id="canny_high_val">150</span>
+          </div>
+          <div class="param-row">
+            <label for="morph_kernel">核大小</label>
+            <input type="range" id="morph_kernel" min="1" max="9" step="2" value="3">
+            <span class="param-val" id="morph_kernel_val">3</span>
+          </div>
+          <div class="param-row">
+            <label for="area_min">最小面积</label>
+            <input type="range" id="area_min" min="50" max="10000" value="500">
+            <span class="param-val" id="area_min_val">500</span>
+          </div>
+          <div class="param-row">
+            <label for="area_max">最大面积</label>
+            <input type="range" id="area_max" min="500" max="200000" value="50000">
+            <span class="param-val" id="area_max_val">50000</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="param-group" id="groupThresh">
+        <button class="param-group-header" aria-expanded="false" aria-controls="groupThreshBody">
+          <svg class="param-arrow" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
+            <path d="M4 1.5L8.5 6L4 10.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          </svg>
+          自适应阈值
+        </button>
+        <div class="param-body" id="groupThreshBody" role="region" aria-label="自适应阈值参数">
+          <div class="param-row">
+            <input type="checkbox" id="enable_threshold" checked>
+            <label for="enable_threshold" style="width:auto;text-align:left">启用</label>
+          </div>
+          <div class="param-row">
+            <label for="thresh_block">块大小</label>
+            <input type="range" id="thresh_block" min="3" max="31" step="2" value="11">
+            <span class="param-val" id="thresh_block_val">11</span>
+          </div>
+          <div class="param-row">
+            <label for="thresh_c">常数C</label>
+            <input type="range" id="thresh_c" min="0" max="20" value="2">
+            <span class="param-val" id="thresh_c_val">2</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="param-group" id="groupLBP">
+        <button class="param-group-header" aria-expanded="false" aria-controls="groupLBPBody">
+          <svg class="param-arrow" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
+            <path d="M4 1.5L8.5 6L4 10.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          </svg>
+          LBP 纹理分析
+        </button>
+        <div class="param-body" id="groupLBPBody" role="region" aria-label="LBP参数">
+          <div class="param-row">
+            <input type="checkbox" id="enable_lbp">
+            <label for="enable_lbp" style="width:auto;text-align:left">启用</label>
+          </div>
+          <div class="param-row">
+            <label for="lbp_anomaly_std">异常阈值</label>
+            <input type="range" id="lbp_anomaly_std" min="1.0" max="5.0" step="0.1" value="2.5">
+            <span class="param-val" id="lbp_anomaly_std_val">2.5</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="param-group" id="groupFFT">
+        <button class="param-group-header" aria-expanded="false" aria-controls="groupFFTBody">
+          <svg class="param-arrow" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
+            <path d="M4 1.5L8.5 6L4 10.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          </svg>
+          FFT 频域分析
+        </button>
+        <div class="param-body" id="groupFFTBody" role="region" aria-label="FFT参数">
+          <div class="param-row">
+            <input type="checkbox" id="enable_fft" checked>
+            <label for="enable_fft" style="width:auto;text-align:left">启用</label>
+          </div>
+          <div class="param-row">
+            <label for="fft_highpass_radius">高通半径</label>
+            <input type="range" id="fft_highpass_radius" min="5" max="100" value="30">
+            <span class="param-val" id="fft_highpass_radius_val">30</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="param-group" id="groupHSV">
+        <button class="param-group-header" aria-expanded="false" aria-controls="groupHSVBody">
+          <svg class="param-arrow" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
+            <path d="M4 1.5L8.5 6L4 10.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          </svg>
+          HSV 颜色检测
+        </button>
+        <div class="param-body" id="groupHSVBody" role="region" aria-label="HSV参数">
+          <div class="param-row">
+            <input type="checkbox" id="enable_hsv" checked>
+            <label for="enable_hsv" style="width:auto;text-align:left">启用</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="param-group" id="groupPre">
+        <button class="param-group-header" aria-expanded="false" aria-controls="groupPreBody">
+          <svg class="param-arrow" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
+            <path d="M4 1.5L8.5 6L4 10.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          </svg>
+          预处理
+        </button>
+        <div class="param-body" id="groupPreBody" role="region" aria-label="预处理参数">
+          <div class="param-row">
+            <label for="denoise_method">去噪方法</label>
+            <select id="denoise_method">
+              <option value="gaussian">高斯</option>
+              <option value="median">中值</option>
+              <option value="bilateral">双边</option>
+            </select>
+          </div>
+          <div class="param-row">
+            <label for="denoise_kernel">核大小</label>
+            <input type="range" id="denoise_kernel" min="1" max="15" step="2" value="5">
+            <span class="param-val" id="denoise_kernel_val">5</span>
+          </div>
+          <div class="param-row">
+            <label for="sharpen_strength">锐化强度</label>
+            <input type="range" id="sharpen_strength" min="0" max="2.0" step="0.1" value="0">
+            <span class="param-val" id="sharpen_strength_val">0</span>
+          </div>
+          <div class="param-row">
+            <input type="checkbox" id="use_clahe" checked>
+            <label for="use_clahe" style="width:auto;text-align:left">CLAHE均衡化</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="param-group" id="groupFusion">
+        <button class="param-group-header" aria-expanded="false" aria-controls="groupFusionBody">
+          <svg class="param-arrow" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
+            <path d="M4 1.5L8.5 6L4 10.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          </svg>
+          结果融合
+        </button>
+        <div class="param-body" id="groupFusionBody" role="region" aria-label="融合参数">
+          <div class="param-row">
+            <label for="iou_threshold">IOU阈值</label>
+            <input type="range" id="iou_threshold" min="0.05" max="0.5" step="0.05" value="0.15">
+            <span class="param-val" id="iou_threshold_val">0.15</span>
+          </div>
+          <div class="param-row">
+            <label for="confidence_threshold">置信度</label>
+            <input type="range" id="confidence_threshold" min="0" max="0.9" step="0.05" value="0.4">
+            <span class="param-val" id="confidence_threshold_val">0.40</span>
+          </div>
+          <div class="param-row">
+            <label for="max_detections">最大检测</label>
+            <input type="range" id="max_detections" min="10" max="200" step="10" value="50">
+            <span class="param-val" id="max_detections_val">50</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="param-footer">
+        <button class="btn-reset" id="btnResetParams">重置默认</button>
+        <span class="channel-summary" id="channelSummary" aria-live="polite"></span>
+      </div>
+    </div>
+
+    <!-- Help -->
+    <div class="card card-wide" aria-labelledby="helpTitle">
+      <div class="card-header">
+        <span class="card-title" id="helpTitle">使用说明</span>
+      </div>
+      <div class="card-body">
+        <ul class="help-list">
+          <li>点击「缺陷检测」开启 AI 缺陷识别</li>
+          <li>点击「尺寸测量」开启实时尺寸测量</li>
+          <li>放入硬币（25mm）/ A4纸（210mm）可自动标定</li>
+          <li>「方法」可在 YOLO 和传统 CV 之间切换</li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<!-- Toast container -->
+<div class="toast-container" id="toastContainer" aria-live="assertive"></div>
+
+<script>
+/* ================================================================
+   Industrial Vision Detection System — Frontend Application
+   ================================================================ */
+
+(function() {
+  'use strict';
+
+  /* ---- Configuration ---- */
+  const API_BASE = '';
+  function api(url) { return API_BASE + url; }
+
+  /* ---- State ---- */
+  const state = {
+    detectionOn: false,
+    measurementOn: false,
+    method: 'yolo',
+    ws: null,
+    wsReconnectTimer: null,
+    wsReconnectDelay: 1000,
+    frameCount: 0,
+    lastFpsTime: performance.now(),
+    paramDebounce: null,
+    animationFrame: null
+  };
+
+  /* ---- DOM Cache ---- */
+  const $ = id => document.getElementById(id);
+  const dom = {
+    btnDetect: $('btnDetect'),
+    btnMeasure: $('btnMeasure'),
+    btnMethod: $('btnMethod'),
+    methodLabel: $('methodLabel'),
+    videoFrame: $('videoFrame'),
+    videoPlaceholder: $('videoPlaceholder'),
+    placeholderText: $('placeholderText'),
+    fpsOverlay: $('fpsOverlay'),
+    connDot: $('connDot'),
+    connLabel: $('connLabel'),
+    connBadge: $('connBadge'),
+    dotDetect: $('dotDetect'),
+    dotMeasure: $('dotMeasure'),
+    txtDetect: $('txtDetect'),
+    txtMeasure: $('txtMeasure'),
+    txtLatency: $('txtLatency'),
+    detectionBody: $('detectionBody'),
+    detectionEmpty: $('detectionEmpty'),
+    detectCount: $('detectCount'),
+    measurementBody: $('measurementBody'),
+    measureEmpty: $('measureEmpty'),
+    measureCount: $('measureCount'),
+    paramPanel: $('paramPanel'),
+    channelSummary: $('channelSummary'),
+    toastContainer: $('toastContainer')
+  };
+
+  /* ---- Toast System ---- */
+  function showToast(msg, type) {
+    type = type || '';
+    var toast = document.createElement('div');
+    toast.className = 'toast' + (type ? ' toast-' + type : '');
+    toast.textContent = msg;
+    toast.setAttribute('role', 'alert');
+    dom.toastContainer.appendChild(toast);
+    toast.addEventListener('animationend', function(e) {
+      if (e.animationName === 'toast-out') { toast.remove(); }
+    });
+  }
+
+  /* ---- Connection State ---- */
+  function setConnectionState(status) {
+    dom.connDot.classList.remove('online', 'connecting');
+    if (status === 'online') {
+      dom.connDot.classList.add('online');
+      dom.connLabel.textContent = '已连接';
+    } else if (status === 'connecting') {
+      dom.connDot.classList.add('connecting');
+      dom.connLabel.textContent = '连接中';
+    } else {
+      dom.connLabel.textContent = '已断开';
+    }
+  }
+
+  /* ---- WebSocket ---- */
+  function connectWebSocket() {
+    var wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    var wsUrl;
+    if (!API_BASE) {
+      wsUrl = wsProtocol + '//' + location.host + '/ws/video';
+    } else {
+      var host = API_BASE.replace(/^https?:\/\//, '');
+      var scheme = API_BASE.startsWith('https') ? 'wss:' : 'ws:';
+      wsUrl = scheme + '//' + host + '/ws/video';
+    }
+
+    setConnectionState('connecting');
+
+    try {
+      state.ws = new WebSocket(wsUrl);
+    } catch (e) {
+      setConnectionState('offline');
+      scheduleReconnect();
+      return;
+    }
+
+    state.ws.onopen = function() {
+      setConnectionState('online');
+      dom.videoPlaceholder.classList.add('hidden');
+      dom.videoFrame.style.display = 'block';
+      dom.placeholderText.textContent = '正在连接摄像头...';
+      state.wsReconnectDelay = 1000; // reset backoff
+    };
+
+    state.ws.onmessage = function(event) {
+      var data;
+      try { data = JSON.parse(event.data); }
+      catch (e) { return; }
+
+      // Frame update — use rAF to batch with display refresh
+      scheduleFrameUpdate(data);
+    };
+
+    state.ws.onclose = function() {
+      setConnectionState('offline');
+      dom.videoFrame.style.display = 'none';
+      dom.videoPlaceholder.classList.remove('hidden');
+      dom.placeholderText.textContent = '连接已断开，正在重连...';
+      scheduleReconnect();
+    };
+
+    state.ws.onerror = function() {
+      // onclose will fire after onerror, handle there
+    };
+  }
+
+  function scheduleReconnect() {
+    if (state.wsReconnectTimer) return;
+    state.wsReconnectTimer = setTimeout(function() {
+      state.wsReconnectTimer = null;
+      connectWebSocket();
+      // Exponential backoff: cap at 10s
+      state.wsReconnectDelay = Math.min(state.wsReconnectDelay * 1.5, 10000);
+    }, state.wsReconnectDelay);
+  }
+
+  /* ---- Frame Update (rAF-throttled) ---- */
+  var pendingFrameData = null;
+
+  function scheduleFrameUpdate(data) {
+    pendingFrameData = data;
+    if (!state.animationFrame) {
+      state.animationFrame = requestAnimationFrame(applyFrameUpdate);
+    }
+  }
+
+  function applyFrameUpdate() {
+    state.animationFrame = null;
+    var data = pendingFrameData;
+    if (!data) return;
+    pendingFrameData = null;
+
+    // Update video image
+    dom.videoFrame.src = 'data:image/jpeg;base64,' + data.frame;
+
+    // Update detection / measurement lists
+    updateDetectionList(data.detections || []);
+    updateMeasurementList(data.measurements || []);
+
+    // FPS
+    state.frameCount++;
+    var now = performance.now();
+    if (now - state.lastFpsTime >= 1000) {
+      dom.fpsOverlay.textContent = state.frameCount + ' FPS';
+      dom.fpsOverlay.classList.toggle('idle', state.frameCount < 5);
+      state.frameCount = 0;
+      state.lastFpsTime = now;
+    }
+
+    // Latency
+    if (data.timestamp) {
+      var latency = Math.round(Date.now() - data.timestamp * 1000);
+      dom.txtLatency.textContent = latency + 'ms';
+    }
+  }
+
+  /* ---- Detection List Rendering ---- */
+  var detectionItems = {};    // id -> { el, class, bbox }
+  var measurementItems = {};  // id -> { el, label, data }
+  var lastDetectionHash = '';
+  var lastMeasurementHash = '';
+  var detectionEmptyTimer = null;   // 延迟清空列表的定时器
+  var measurementEmptyTimer = null;
+
+  function simpleHash(arr) {
+    // 快速哈希用于检测「项集合」变化（增/删），不关心坐标/置信度微动
+    if (!arr.length) return 'empty';
+    return arr.map(function(d) {
+      // 只用 id + class 判断是否是同一组项；bbox 和 confidence 每帧微动不应触发重建
+      return (d.id || '') + '|' + (d.class || '');
+    }).sort().join(';');
+  }
+
+  function updateDetectionList(detections) {
+    var newHash = simpleHash(detections);
+    if (newHash === lastDetectionHash) return;
+
+    dom.detectCount.textContent = detections.length;
+    var body = dom.detectionBody;
+
+    // 如果没有检测结果
+    if (!detections.length) {
+      // 延迟清空：先等 500ms，避免闪烁
+      if (detectionEmptyTimer) clearTimeout(detectionEmptyTimer);
+      detectionEmptyTimer = setTimeout(function() {
+        // 再次确认仍然为空（避免在等待期间又有结果）
+        if (lastDetectionHash === 'empty' || lastDetectionHash === '') {
+          // 给现有项加移除动画
+          var existing = body.querySelectorAll('.detection-item');
+          var delay = 0;
+          existing.forEach(function(el) {
+            el.style.animation = 'none';
+            el.style.transitionDelay = delay + 'ms';
+            el.classList.add('removing');
+            delay += 50;
+          });
+          setTimeout(function() {
+            var msg = state.detectionOn ? '画面中未发现缺陷' : '未开启缺陷检测';
+            var icon = state.detectionOn
+              ? '<svg class="card-empty-icon" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 12v8"/><circle cx="16" cy="16" r="13"/></svg>'
+              : '<svg class="card-empty-icon" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 10l-6-6M28 28l-6-6"/><circle cx="13" cy="13" r="9"/></svg>';
+            body.innerHTML = '<div class="card-empty">' + icon + '<span>' + msg + '</span></div>';
+            detectionItems = {};
+          }, 400);
+        }
+        detectionEmptyTimer = null;
+      }, 500);
+      lastDetectionHash = 'empty';
+      return;
+    }
+
+    // 有检测结果时，取消延迟清空定时器
+    if (detectionEmptyTimer) {
+      clearTimeout(detectionEmptyTimer);
+      detectionEmptyTimer = null;
+    }
+
+    lastDetectionHash = newHash;
+
+    // 移除已经不存在的空状态提示
+    var emptyEl = body.querySelector('.card-empty');
+    if (emptyEl) { emptyEl.remove(); }
+
+    // 获取或创建列表容器
+    var listEl = body.querySelector('.detection-list');
+    if (!listEl) {
+      listEl = document.createElement('div');
+      listEl.className = 'detection-list';
+      body.appendChild(listEl);
+    }
+
+    // 收集当前检测项的ID
+    var currentIds = {};
+    var newItems = {};
+
+    for (var i = 0; i < detections.length; i++) {
+      var d = detections[i];
+      var did = String(d.id || ('d' + i));
+      currentIds[did] = true;
+
+      if (detectionItems[did]) {
+        // 已存在的项：检查是否真的需要更新
+        var old = detectionItems[did];
+        var confChanged = Math.abs((old.confidence || 0) - (d.confidence || 0)) > 0.02;
+        var clsChanged = old.class !== d.class;
+
+        if (clsChanged || confChanged) {
+          old.class = d.class;
+          old.confidence = d.confidence;
+          old.bbox = d.bbox;
+          // 静默更新 DOM 中的置信度（无闪烁动画）
+          var confEl = old.el.querySelector('.detection-confidence');
+          if (confEl) {
+            var confVal = d.confidence * 100;
+            confEl.textContent = confVal.toFixed(1) + '%';
+            confEl.className = 'detection-confidence ' +
+              (confVal >= 75 ? 'conf-high' : (confVal >= 50 ? 'conf-mid' : 'conf-low'));
+          }
+        }
+        listEl.appendChild(old.el); // 保持顺序
+      } else {
+        // 新增的检测项
+        newItems[did] = d;
+      }
+    }
+
+    // 移除已经不存在的项
+    var delay = 0;
+    for (var id in detectionItems) {
+      if (!currentIds[id]) {
+        detectionItems[id].el.classList.add('removing');
+        (function(el, d) {
+          setTimeout(function() {
+            if (el.parentNode) el.parentNode.removeChild(el);
+          }, d);
+        })(detectionItems[id].el, delay);
+        delay += 60;
+        delete detectionItems[id];
+      }
+    }
+
+    // 添加新项
+    var idx = Object.keys(detectionItems).length;
+    for (var nid in newItems) {
+      var nd = newItems[nid];
+      var conf = nd.confidence * 100;
+      var confClass = conf >= 75 ? 'conf-high' : (conf >= 50 ? 'conf-mid' : 'conf-low');
+
+      var itemEl = document.createElement('div');
+      itemEl.className = 'detection-item';
+      itemEl.style.animationDelay = (idx * 40) + 'ms';
+      itemEl.innerHTML =
+        '<span class="detection-id">#' + (nd.id || '?') + '</span>' +
+        '<div class="detection-meta">' +
+          '<div class="detection-class">' + nd.class + '</div>' +
+          '<div class="detection-detail">' +
+            '<span class="detection-confidence ' + confClass + '">' + conf.toFixed(1) + '%</span>' +
+            ' &middot; ' + nd.width + '\u00D7' + nd.height + 'px' +
+          '</div>' +
+        '</div>';
+
+      // 插入到正确位置
+      var items = listEl.children;
+      if (idx < items.length) {
+        listEl.insertBefore(itemEl, items[idx]);
+      } else {
+        listEl.appendChild(itemEl);
+      }
+
+      detectionItems[nid] = {
+        el: itemEl,
+        class: nd.class,
+        confidence: nd.confidence,
+        bbox: nd.bbox ? nd.bbox.slice() : null,
+      };
+      idx++;
+    }
+  }
+
+  function updateMeasurementList(measurements) {
+    var newHash = simpleHash(measurements);
+    if (newHash === lastMeasurementHash) return;
+
+    dom.measureCount.textContent = measurements.length;
+    var body = dom.measurementBody;
+
+    // 如果没有测量结果
+    if (!measurements.length) {
+      if (measurementEmptyTimer) clearTimeout(measurementEmptyTimer);
+      measurementEmptyTimer = setTimeout(function() {
+        if (lastMeasurementHash === 'empty' || lastMeasurementHash === '') {
+          var existing = body.querySelectorAll('.detection-item');
+          var delay = 0;
+          existing.forEach(function(el) {
+            el.style.transitionDelay = delay + 'ms';
+            el.classList.add('removing');
+            delay += 50;
+          });
+          setTimeout(function() {
+            var msg = state.measurementOn ? '已开启，正在搜索参考物...' : '未开启尺寸测量';
+            var icon = state.measurementOn
+              ? '<svg class="card-empty-icon" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2"><circle cx="16" cy="16" r="4"/><path d="M16 2v12M16 20v10M2 16h12M20 16h10"/></svg>'
+              : '<svg class="card-empty-icon" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 29L29 3"/><path d="M6 2l4 4M26 18l4 4"/></svg>';
+            body.innerHTML = '<div class="card-empty">' + icon + '<span>' + msg + '</span></div>';
+            measurementItems = {};
+          }, 400);
+        }
+        measurementEmptyTimer = null;
+      }, 500);
+      lastMeasurementHash = 'empty';
+      return;
+    }
+
+    if (measurementEmptyTimer) {
+      clearTimeout(measurementEmptyTimer);
+      measurementEmptyTimer = null;
+    }
+
+    lastMeasurementHash = newHash;
+
+    var emptyEl = body.querySelector('.card-empty');
+    if (emptyEl) { emptyEl.remove(); }
+
+    var listEl = body.querySelector('.detection-list');
+    if (!listEl) {
+      listEl = document.createElement('div');
+      listEl.className = 'detection-list';
+      body.appendChild(listEl);
+    }
+
+    var currentIds = {};
+    var newItems = {};
+
+    for (var i = 0; i < measurements.length; i++) {
+      var m = measurements[i];
+      var mid = String(m.id || ('m' + i));
+      currentIds[mid] = true;
+
+      if (measurementItems[mid]) {
+        // 已存在：保持并移动位置
+        listEl.appendChild(measurementItems[mid].el);
+      } else {
+        newItems[mid] = m;
+      }
+    }
+
+    // 移除不存在的
+    var delay = 0;
+    for (var id in measurementItems) {
+      if (!currentIds[id]) {
+        measurementItems[id].el.classList.add('removing');
+        (function(el, d) {
+          setTimeout(function() {
+            if (el.parentNode) el.parentNode.removeChild(el);
+          }, d);
+        })(measurementItems[id].el, delay);
+        delay += 60;
+        delete measurementItems[id];
+      }
+    }
+
+    // 添加新项
+    var idx = Object.keys(measurementItems).length;
+    for (var nid in newItems) {
+      var nm = newItems[nid];
+      var parts = [];
+      var w = nm.width_mm ? nm.width_mm + 'mm' : (nm.width_px ? nm.width_px + 'px' : '?');
+      var h = nm.height_mm ? nm.height_mm + 'mm' : (nm.height_px ? nm.height_px + 'px' : '?');
+      parts.push(w + ' \u00D7 ' + h);
+      if (nm.area_mm2) parts.push('面积：' + nm.area_mm2 + 'mm\u00B2');
+      if (nm.diameter_mm) parts.push('直径：' + nm.diameter_mm + 'mm');
+      if (nm.perimeter_mm) parts.push('周长：' + nm.perimeter_mm + 'mm');
+
+      var itemEl = document.createElement('div');
+      itemEl.className = 'detection-item measure';
+      itemEl.style.animationDelay = (idx * 40) + 'ms';
+      itemEl.innerHTML =
+        '<span class="detection-id">#' + (nm.id || '') + '</span>' +
+        '<div class="detection-meta">' +
+          '<div class="detection-class">' + (nm.label || '目标') + '</div>' +
+          '<div class="detection-detail">' + parts.join(' &middot; ') + '</div>' +
+        '</div>';
+
+      var items = listEl.children;
+      if (idx < items.length) {
+        listEl.insertBefore(itemEl, items[idx]);
+      } else {
+        listEl.appendChild(itemEl);
+      }
+
+      measurementItems[nid] = { el: itemEl, label: nm.label, data: nm };
+      idx++;
+    }
+  }
+
+  /* ---- Toggle Detection ---- */
+  async function toggleDetection() {
+    var btn = dom.btnDetect;
+    btn.classList.add('btn-loading');
+    btn.disabled = true;
+
+    try {
+      var res = await fetch(api('/api/detection/toggle'), { method: 'POST' });
+      var data = await res.json();
+      state.detectionOn = data.detection_enabled;
+      updateDetectionButton();
+      updateStatusDots();
+    } catch (e) {
+      showToast('缺陷检测切换失败，请检查后端连接', 'error');
+    } finally {
+      btn.classList.remove('btn-loading');
+      btn.disabled = false;
+    }
+  }
+
+  function updateDetectionButton() {
+    var btn = dom.btnDetect;
+    var stateClass = state.detectionOn ? 'btn-primary btn-toggle-on' : '';
+    btn.className = 'btn ' + stateClass;
+    btn.setAttribute('aria-pressed', state.detectionOn);
+    btn.querySelector('span').textContent = '缺陷检测：' + (state.detectionOn ? '开' : '关');
+  }
+
+  /* ---- Toggle Measurement ---- */
+  async function toggleMeasurement() {
+    var btn = dom.btnMeasure;
+    btn.classList.add('btn-loading');
+    btn.disabled = true;
+
+    try {
+      var res = await fetch(api('/api/measurement/toggle'), { method: 'POST' });
+      var data = await res.json();
+      state.measurementOn = data.measurement_enabled;
+      updateMeasurementButton();
+      updateStatusDots();
+    } catch (e) {
+      showToast('尺寸测量切换失败，请检查后端连接', 'error');
+    } finally {
+      btn.classList.remove('btn-loading');
+      btn.disabled = false;
+    }
+  }
+
+  function updateMeasurementButton() {
+    var btn = dom.btnMeasure;
+    var stateClass = state.measurementOn ? 'btn-measure-on' : 'btn-measure';
+    btn.className = 'btn ' + stateClass;
+    btn.setAttribute('aria-pressed', state.measurementOn);
+    btn.querySelector('span').textContent = '尺寸测量：' + (state.measurementOn ? '开' : '关');
+  }
+
+  function updateStatusDots() {
+    dom.dotDetect.className = 'status-dot' + (state.detectionOn ? ' active' : '');
+    dom.dotMeasure.className = 'status-dot' + (state.measurementOn ? ' warning' : '');
+    dom.txtDetect.textContent = state.detectionOn ? '运行中' : '待机';
+    dom.txtMeasure.textContent = state.measurementOn ? '运行中' : '待机';
+  }
+
+  /* ---- Switch Method ---- */
+  function switchMethod() {
+    state.method = state.method === 'yolo' ? 'traditional' : 'yolo';
+    dom.methodLabel.textContent = state.method === 'yolo' ? 'YOLO' : '传统CV';
+
+    fetch(api('/api/detection/method/' + state.method), { method: 'POST' })
+      .catch(function() { showToast('方法切换失败', 'error'); });
+
+    toggleParamPanel();
+  }
+
+  function toggleParamPanel() {
+    if (state.method === 'traditional') {
+      dom.paramPanel.classList.add('visible');
+    } else {
+      dom.paramPanel.classList.remove('visible');
+    }
+  }
+
+  /* ---- Parameter Panel ---- */
+  function initParamPanel() {
+    // Delegate click events for param group toggles
+    dom.paramPanel.addEventListener('click', function(e) {
+      var header = e.target.closest('.param-group-header');
+      if (!header) return;
+
+      var group = header.closest('.param-group');
+      var expanded = header.getAttribute('aria-expanded') === 'true';
+      header.setAttribute('aria-expanded', !expanded);
+      group.classList.toggle('open');
+    });
+
+    // Delegate slider input
+    dom.paramPanel.addEventListener('input', function(e) {
+      var slider = e.target;
+      if (slider.type !== 'range') return;
+
+      var valEl = document.getElementById(slider.id + '_val');
+      if (valEl) {
+        var val = parseFloat(slider.value);
+        valEl.textContent = Number.isInteger(val) ? val : val.toFixed(2);
+      }
+
+      if (slider.id === 'confidence_threshold') {
+        var cel = $('confidence_threshold_val');
+        if (cel) cel.textContent = parseFloat(slider.value).toFixed(2);
+      }
+
+      onParamChange('cv', slider.id, parseFloat(slider.value));
+    });
+
+    // Delegate checkbox/select change
+    dom.paramPanel.addEventListener('change', function(e) {
+      var el = e.target;
+      if (el.type === 'range') return; // handled by input
+
+      var value;
+      if (el.type === 'checkbox') {
+        value = el.checked;
+      } else if (el.tagName === 'SELECT') {
+        value = el.value;
+      } else {
+        return;
+      }
+
+      onParamChange('cv', el.id, value);
+    });
+
+    // Reset button
+    $('btnResetParams').addEventListener('click', resetParams);
+  }
+
+  function onParamChange(type, key, value) {
+    clearTimeout(state.paramDebounce);
+    state.paramDebounce = setTimeout(function() {
+      var body = {};
+      body[key] = value;
+      fetch(api('/api/params/' + type), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      }).catch(function() {});
+      if (type === 'cv') updateChannelSummary();
+    }, 300);
+  }
+
+  function resetParams() {
+    var defaults = {
+      canny_low: 50, canny_high: 150, morph_kernel: 3,
+      area_min: 500, area_max: 50000, thresh_block: 11, thresh_c: 2,
+      lbp_anomaly_std: 2.5, fft_highpass_radius: 30,
+      denoise_kernel: 5, sharpen_strength: 0, iou_threshold: 0.15,
+      confidence_threshold: 0.4, max_detections: 50
+    };
+
+    for (var key in defaults) {
+      var el = document.getElementById(key);
+      if (!el) continue;
+      el.value = defaults[key];
+      var valEl = document.getElementById(key + '_val');
+      if (valEl) {
+        valEl.textContent = Number.isInteger(defaults[key])
+          ? defaults[key] : defaults[key].toFixed(2);
+      }
+    }
+
+    (['enable_canny','enable_threshold','enable_fft','enable_hsv','use_clahe']).forEach(function(id) {
+      var cb = document.getElementById(id);
+      if (cb) cb.checked = true;
+    });
+    var lbpCb = $('enable_lbp');
+    if (lbpCb) lbpCb.checked = false;
+    var sel = $('denoise_method');
+    if (sel) sel.value = 'gaussian';
+
+    var payload = Object.assign({}, defaults);
+    payload.denoise_method = 'gaussian';
+    payload.enable_canny = true;
+    payload.enable_threshold = true;
+    payload.enable_lbp = false;
+    payload.enable_fft = true;
+    payload.enable_hsv = true;
+    payload.use_clahe = true;
+
+    fetch(api('/api/params/cv'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).catch(function() {});
+
+    showToast('参数已重置为默认值');
+  }
+
+  function updateChannelSummary() {
+    fetch(api('/api/cv/channels'))
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var ch = data.channels;
+        var parts = [];
+        for (var k in ch) { parts.push(k + ':' + ch[k]); }
+        dom.channelSummary.textContent =
+          '通道: ' + (parts.length ? parts.join(' | ') : '无') +
+          ' | 融合前: ' + (data.total_raw || 0);
+      }).catch(function() {});
+  }
+
+  /* ---- Event Bindings ---- */
+  function bindEvents() {
+    dom.btnDetect.addEventListener('click', toggleDetection);
+    dom.btnMeasure.addEventListener('click', toggleMeasurement);
+    dom.btnMethod.addEventListener('click', switchMethod);
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+      // Ctrl+D -> toggle detection
+      if (e.ctrlKey && e.key === 'd') { e.preventDefault(); toggleDetection(); }
+      // Ctrl+M -> toggle measurement
+      if (e.ctrlKey && e.key === 'm') { e.preventDefault(); toggleMeasurement(); }
+    });
+  }
+
+  /* ---- Initialization ---- */
+  function init() {
+    bindEvents();
+    initParamPanel();
+    connectWebSocket();
+    updateDetectionButton();
+    updateMeasurementButton();
+  }
+
+  // Start when DOM ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+})();
+</script>
+
+</body>
+</html>

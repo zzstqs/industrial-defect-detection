@@ -1,0 +1,25 @@
+# 工业图像处理项目依赖清单
+# 安装命令: pip install -r requirements.txt
+
+# 基础科学计算
+numpy>=2.0.0
+opencv-python>=4.10.0
+pillow>=10.0.0
+matplotlib>=3.8.0
+scipy>=1.14.0
+
+# 深度学习 - YOLO缺陷检测
+torch>=2.5.0
+torchvision>=0.20.0
+ultralytics>=8.3.0
+
+# 后端服务 - 实时视频流
+fastapi>=0.115.0
+uvicorn>=0.34.0
+websockets>=13.0
+python-multipart>=0.0.9
+pydantic>=2.10.0
+
+# 数据集处理
+pyyaml>=6.0
+psutil>=5.9.0
